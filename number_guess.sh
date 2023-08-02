@@ -29,31 +29,30 @@ CURRENT_GAME_ID=$($PSQL "SELECT MAX(game_id) FROM games WHERE user_id = '$USER_I
 
 echo "Guess the secret number between 1 and 1000:"
 USER_GUESSED_CORRECTLY=false
+USER_COUNT_GUESSES=0
 while [[ ! $USER_GUESSED_CORRECTLY == 'true' ]]
 do
   read USER_GUESS
+  USER_COUNT_GUESSES=$(( USER_COUNT_GUESSES + 1 ))
   if [[ ! $USER_GUESS =~ ^[0-9]+$ ]]
   then
     echo "That is not an integer, guess again:"
   else
     if [[ $USER_GUESS -gt $RANDOM_NUMBER_BETWEEN_1_AND_MAX_RANDOM_NUMBER ]]
     then
-      UPDATE_RESULT=$($PSQL "UPDATE games SET count_guesses_so_far = count_guesses_so_far + 1 WHERE game_id = $CURRENT_GAME_ID")
       echo "It's lower than that, guess again:"
     else
       if [[ $USER_GUESS -lt $RANDOM_NUMBER_BETWEEN_1_AND_MAX_RANDOM_NUMBER ]]
       then
-        UPDATE_RESULT=$($PSQL "UPDATE games SET count_guesses_so_far = count_guesses_so_far + 1 WHERE game_id = $CURRENT_GAME_ID")
         echo "It's higher than that, guess again:"
       else
         if [[ $USER_GUESS -eq $RANDOM_NUMBER_BETWEEN_1_AND_MAX_RANDOM_NUMBER ]]
         then
           USER_GUESSED_CORRECTLY=true
-          USER_GUESSED_CORRECTLY_UPDATE=$($PSQL "UPDATE games SET user_guessed_correctly = true WHERE game_id = $CURRENT_GAME_ID")
-          USER_NUMBER_OF_GUESSES=$($PSQL "SELECT count_guesses_so_far FROM games WHERE game_id = $CURRENT_GAME_ID")
-          echo "You guessed it in $USER_NUMBER_OF_GUESSES tries. The secret number was $RANDOM_NUMBER_BETWEEN_1_AND_MAX_RANDOM_NUMBER. Nice job!"
+          echo "You guessed it in $USER_COUNT_GUESSES tries. The secret number was $RANDOM_NUMBER_BETWEEN_1_AND_MAX_RANDOM_NUMBER. Nice job!"
         fi
       fi
     fi
   fi
 done
+UPDATE_RESULT=$($PSQL "UPDATE games SET count_guesses_so_far = $USER_COUNT_GUESSES WHERE game_id = $CURRENT_GAME_ID")
